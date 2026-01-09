@@ -1,3 +1,0 @@
-Hello, Local Device
-Hello, From Cloud (GITHUB)
-Trying from local
