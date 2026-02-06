@@ -81,7 +81,7 @@ class ForecastResponse(BaseModel):
     """Forecast response schema"""
     latitude: float
     longitude: float
-    timezone: str
+    timezone: int  # OpenWeather API returns timezone as integer (seconds offset from UTC)
     hourly: List[HourlyForecast]
     daily: List[DailyForecast]
 

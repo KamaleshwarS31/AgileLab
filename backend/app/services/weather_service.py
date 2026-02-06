@@ -31,7 +31,12 @@ class OpenWeatherService:
         cache_key = f"weather:current:{lat}:{lon}"
         cached_data = cache.get(cache_key)
         if cached_data:
-            return CurrentWeatherResponse(**cached_data)
+            try:
+                return CurrentWeatherResponse(**cached_data)
+            except Exception as e:
+                print(f"Error parsing cached current weather data: {e}")
+                # Clear bad cache and continue to fetch fresh data
+                cache.delete(cache_key)
         
         # Fetch from API
         url = f"{self.base_url}/weather"
@@ -83,8 +88,14 @@ class OpenWeatherService:
                 
                 return result
                 
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP Error fetching current weather: Status {e.response.status_code}")
+            print(f"Response: {e.response.text}")
+            return None
         except Exception as e:
-            print(f"Error fetching current weather: {e}")
+            print(f"Error fetching current weather: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def get_forecast(
@@ -94,12 +105,37 @@ class OpenWeatherService:
     ) -> Optional[ForecastResponse]:
         """Get hourly and daily forecast for a location"""
         
+        # Write to file for debugging
+        with open("debug.log", "a") as f:
+            f.write(f"\n[FORECAST] Starting forecast request for lat={lat}, lon={lon}\n")
+        
+        print(f"[FORECAST] Starting forecast request for lat={lat}, lon={lon}")
+        
         # Check cache first
         cache_key = f"weather:forecast:{lat}:{lon}"
+        print(f"[FORECAST] Checking cache with key: {cache_key}")
+        with open("debug.log", "a") as f:
+            f.write(f"[FORECAST] Checking cache with key: {cache_key}\n")
+        
         cached_data = cache.get(cache_key)
         if cached_data:
-            return ForecastResponse(**cached_data)
+            print(f"[FORECAST] Found cached data, attempting to parse...")
+            with open("debug.log", "a") as f:
+                f.write(f"[FORECAST] Found cached data\n")
+            try:
+                result = ForecastResponse(**cached_data)
+                print(f"[FORECAST] Successfully parsed cached data")
+                return result
+            except Exception as e:
+                print(f"[FORECAST] Error parsing cached forecast data: {e}")
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] Error parsing cached data: {e}\n")
+                # Clear bad cache and continue to fetch fresh data
+                cache.delete(cache_key)
         
+        print(f"[FORECAST] No valid cache, fetching from API...")
+        with open("debug.log", "a") as f:
+            f.write(f"[FORECAST] Fetching from API...\n")
         # Note: OneCall API 3.0 requires subscription, using 2.5 forecast endpoint
         url = f"{self.base_url}/forecast"
         params = {
@@ -111,10 +147,16 @@ class OpenWeatherService:
         }
         
         try:
+            with open("debug.log", "a") as f:
+                f.write(f"[FORECAST] Making HTTP request to {url}\n")
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, params=params, timeout=10.0)
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] Got response: {response.status_code}\n")
                 response.raise_for_status()
                 data = response.json()
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] Parsed JSON, got {len(data.get('list', []))} items\n")
                 
                 # Transform hourly data
                 hourly_forecasts = []
@@ -213,15 +255,39 @@ class OpenWeatherService:
                     "daily": [d.model_dump() for d in daily_forecasts]
                 }
                 
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] Creating ForecastResponse object...\n")
                 result = ForecastResponse(**forecast_data)
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] ForecastResponse created successfully!\n")
                 
                 # Cache the result
                 cache.set(cache_key, result.model_dump(), expiration=600)
                 
+                with open("debug.log", "a") as f:
+                    f.write(f"[FORECAST] Returning result\n")
                 return result
                 
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP Error fetching forecast: Status {e.response.status_code}")
+            print(f"Response: {e.response.text}")
+            with open("debug.log", "a") as f:
+                f.write(f"[FORECAST] HTTP Error: {e.response.status_code}\n")
+            return None
+        except KeyError as e:
+            print(f"KeyError in forecast data parsing: {e}")
+            print(f"This means the API response structure is different than expected")
+            with open("debug.log", "a") as f:
+                f.write(f"[FORECAST] KeyError: {e}\n")
+            import traceback
+            traceback.print_exc()
+            return None
         except Exception as e:
-            print(f"Error fetching forecast: {e}")
+            print(f"Error fetching forecast: {type(e).__name__}: {e}")
+            with open("debug.log", "a") as f:
+                f.write(f"[FORECAST] Exception: {type(e).__name__}: {str(e)[:500]}\n")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def search_location(self, query: str) -> List[LocationSearch]:

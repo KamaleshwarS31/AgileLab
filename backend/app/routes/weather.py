@@ -85,11 +85,15 @@ async def get_forecast(
 ):
     """Get weather forecast for a location"""
     
+    print(f"[ROUTE] Forecast endpoint called with lat={lat}, lon={lon}")
     forecast = await weather_service.get_forecast(lat, lon)
+    print(f"[ROUTE] Forecast service returned: {forecast is not None}")
     
     if not forecast:
+        print(f"[ROUTE] Forecast is None, returning 404")
         raise HTTPException(status_code=404, detail="Forecast data not found")
     
+    print(f"[ROUTE] Returning forecast data")
     return forecast
 
 

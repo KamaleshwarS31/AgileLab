@@ -29,4 +29,12 @@ def get_db():
 
 def init_db():
     """Initialize database tables"""
-    Base.metadata.create_all(bind=engine)
+    try:
+        # checkfirst=True will only create tables if they don't exist
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+        print("Database tables verified/created successfully")
+    except Exception as e:
+        print(f"Warning: Database initialization issue: {e}")
+        # Don't fail startup if tables already exist
+        pass
+
