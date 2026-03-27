@@ -1,0 +1,5 @@
+# Created at 2026-03-27T16:31:40.961
+Boot Manifest-JAR contains absolute paths in classpath 'D:\Sem - 6\ISWE406L - Agile Development Process and Devops\ISWE406P - Agile Development Process and Devops Lab\AgileLab\maven-app\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
