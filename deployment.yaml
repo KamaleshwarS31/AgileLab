@@ -20,9 +20,7 @@ metadata:
   namespace: weather-app
 type: Opaque
 data:
-  # Base64 encoded 'your_api_key_here'
   OPENWEATHER_API_KEY: eW91cl9hcGlfa2V5X2hlcmU=
-  # Base64 encoded 'postgres_password'
   POSTGRES_PASSWORD: cG9zdGdyZXNfcGFzc3dvcmQ=
 ---
 apiVersion: apps/v1
@@ -43,6 +41,7 @@ spec:
       containers:
       - name: postgres
         image: postgres:14
+        imagePullPolicy: IfNotPresent
         env:
         - name: POSTGRES_DB
           value: "weatherdb"
@@ -85,6 +84,7 @@ spec:
       containers:
       - name: redis
         image: redis:6-alpine
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6379
 ---
@@ -118,7 +118,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: weather-backend:latest
+        image: kamaleshwars/kubernetes-pipeline   # 🔥 FIXED
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         env:
@@ -173,7 +174,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: weather-frontend:latest
+        image: kamaleshwars/kubernetes-pipeline   # 🔥 FIXED
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         env:
